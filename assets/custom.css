@@ -1,0 +1,70 @@
+:root {
+	overflow-x: hidden;
+	--scroll-background: rgba(0, 0, 0, .01);
+	--scroll-color: rgba(0, 0, 0, .25);
+}
+
+:focus {
+    outline: none!important;
+}
+
+body {
+	overflow-x: unset !important;
+}
+
+::-webkit-scrollbar {
+	width: 6px !important;
+	height: 6px;
+
+	background-color: var(--scroll-background) !important;
+	border-radius: 5px;
+}
+
+::-webkit-scrollbar-track {
+	border-radius: 5px;
+	background-color: var(--scroll-background) !important;
+}
+
+body ::-webkit-scrollbar-track {
+	border-radius: 5px;
+	background-color: var(--scroll-background) !important;
+}
+
+::-webkit-scrollbar-thumb {
+	cursor: pointer;
+	border-radius: 5px;
+	-webkit-transition: color .2s ease;
+	transition: color .2s ease;
+	background-color: var(--scroll-color) !important;
+}
+
+.shadow {
+    -webkit-filter: drop-shadow(2px 2px 2px #ccc);
+    filter: drop-shadow(2px 2px 2px #ccc);
+}
+
+*:not(i) {
+    font-family: 'Roboto Condensed'!important;
+}
+
+.fas {
+    font-family: "Font Awesome 5 Free"!important;
+    font-weight: 600!important;
+}
+
+.far {
+    font-family: "Font Awesome 5 Free"!important;
+    font-weight: 400!important;
+}
+
+.fab {
+    font-family: "Font Awesome 5 Brands"!important;
+}
+
+/* .page-enter-active, .page-leave-active {
+    transition: opacity .0s;
+}
+
+.page-enter, .page-leave-active {
+    opacity: 0;
+} */

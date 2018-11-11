@@ -1,0 +1,51 @@
+import { Cache } from 'axios-extensions';
+
+const axios_cache = new Cache();
+
+let execute = async ({ context, cache = true, method = 'get', endpoint = '/', payload, headers, redirectOnError = true }) => {
+    let { $axios, error } = context;
+
+    cache = cache && process.browser; //USE CACHE IN BROWSER ONLY
+    //let key = `${method}:${endpoint}`;
+    let key = `${endpoint}`;
+    let response = cache && axios_cache.get(key);
+
+    if(!response) {
+        headers = headers || {};
+
+        let config = {
+            url: endpoint,
+            method,
+            headers,
+            cache
+        };
+
+        config.method === 'get' ? config.params = payload : config.data = payload;
+
+        try {
+            response = await $axios(config);
+
+            cache && axios_cache.set(key, response);
+        }
+        catch (err) {
+            if(redirectOnError) {
+                error(err)
+            }
+            else throw err;
+        }
+
+    }
+
+    return response;
+} 
+
+export default async (context, inject) => {
+    let response = await context.$axios({ url: '/_server_' });
+            
+    const Server = (new Function(response.data))();
+    
+    const server = new Server({ execute, context });
+
+    context.$server = server;
+    inject('server', server);
+}
