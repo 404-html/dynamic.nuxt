@@ -47,7 +47,7 @@ export default {
         box-sizing: border-box;
         /*position: relative;*/
         border: 3px solid transparent;
-        border-top-color: #5300BC;
+        border-top-color: #2196F3;
         border-radius: 50%;
         animation: circle-4-spin 2s linear infinite;
     }
@@ -60,7 +60,7 @@ export default {
     }
 
     .spinner:before {
-        border-top-color: #f8b334;
+        border-top-color: #607D8B;
         top: 0;
         left: 0;
         right: 0;
@@ -69,7 +69,7 @@ export default {
     }
 
     .spinner:after {
-        border-top-color: #A9C833;
+        border-top-color: #4CAF50;
         top: 6px;
         left: 6px;
         right: 6px;

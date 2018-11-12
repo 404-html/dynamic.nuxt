@@ -26,19 +26,8 @@ router.use((req, res, next) => {
 
 ///////////////////////////////////////////////////////////////////////////////////////
 
-/* const multer  = require('multer');
-
-const storage = multer.memoryStorage();
-const blobUpload = multer({ 
-    storage,
-    limits: {
-        fileSize: 1024 * 6024
-    }
-}); */
-
 const Busboy = require('busboy');
 const MemoryStream = require('memorystream');
-
 
 let multipartDetector = function(req, res, next) {
     if(req.headers['content-type'] && req.headers['content-type'].indexOf('multipart/form-data') !== -1) {
@@ -75,121 +64,41 @@ let multipartDetector = function(req, res, next) {
     
         busboy.on('finish', function() {
             console.log('Done parsing form!');
-            //res.writeHead(303, { Connection: 'close', Location: '/' });
-            //res.end();
+
             next();
         });
     
         req.pipe(busboy);
-        /* let none = blobUpload.any();
-        none(req, res, (err) => {
-            req.blob = {
-                err,
-                files: req.files
-            }
 
-            next();
-        }); */
     }
     else next();
 };
 
 ///////////////////////////////////////////////////////////////////////////////////////
-const api = require('./classes');
-
-function hasMethod(obj, name) {
-    const desc = Object.getOwnPropertyDescriptor(obj, name);
- 
-    return !!desc && typeof desc.value === 'function';
-}
-
-function getClassMethodNames(Class, stop = Object.prototype) {
-    let array = [];
-    let proto = Class.prototype;
-
-    while (proto && proto !== stop) {
-        Object.getOwnPropertyNames (proto).forEach (name => {
-            if (name !== 'constructor' && name.slice(0, 1) !== '_') {
-                if (hasMethod(proto, name)) {
-                    array.push (name);
-                }
-            }
-        });
-
-        proto = Object.getPrototypeOf(proto);
-    }
-
-    return array;
-}
+const { types, code } = require('./classes');
 
 router.all('/_server_', (req, res) => {
     console.log('request');
-    
-    let class_body = '';
-
-    for(let class_instance in api) {
-        const instance = api[class_instance];
-        const name = instance.name.toLowerCase();
-
-        let methods = '';
-
-        for(let key of getClassMethodNames(instance)) {
-            
-            methods = methods + `${key}: async (params = {}, options = {}) => {
-                
-                //debugger
-                let config = {
-                    context: this.context,
-                    endpoint: '/${name}.${key}',
-                    method: 'post',
-                    payload: params
-                };
-
-                config = { ...config, ...options };
-
-                let response = await this.execute(config);
-
-                return response && response.data; 
-            },
-            `        
-        
-        }
-
-        class_body = class_body + `get ${name}() {
-            return {
-                ${methods}
-            }
-        }
-        `
-    }
-
-    const code = `
-        class Server {
-            constructor(args) {
-                this.execute = args.execute;
-                this.context = args.context;
-            }
-
-            ${class_body}
-        }
-        
-        return Server;`
 
     res.end(code);
 })
 
 let patterns = ['/:type\::id\.:action', '/:type\.:action', '/:type\::id', '/:type'];
 
-router.all(patterns, multipartDetector, (req, res) => {
-    console.log('request');
-    
+router.all(patterns, multipartDetector, async (req, res, next) => {
+
     let { type, id, action } = req.params;
 
-    let object = new api[type]('token');
+    let object = new types[type]('token');
 
-    let result = object[action](req.body, { req, res });
+    try {
+        let result = await object[action](req.body, { req, res });
 
-    res.locals.sendAsFile ? res.sendFile(result) : res.json(result);
+        res.locals.sendAsFile ? res.sendFile(result) : res.json(result);
+    }
+    catch(err) {
+        next(err);
+    }
 })
 
 router.use((err, req, res, next) => {

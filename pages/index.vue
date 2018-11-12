@@ -85,7 +85,7 @@ export default {
 
             await this.$server.member.formData(data, { cache: false });
 
-            this.croppa.refresh();
+            //this.croppa.refresh();
         }
     }
 }

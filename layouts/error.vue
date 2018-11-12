@@ -4,15 +4,16 @@
       width="500"
     >
     <v-card>
-        <v-card-title class="headline">Use Google's location service?</v-card-title>
+        <v-card-title class="headline">Something went wrong...</v-card-title>
 
         <v-card-text>
-          <h1 v-if="error.statusCode === 404">Page not found</h1>
             
+            <h1 v-if="err.status === 404">Page not found</h1>
             <div v-else>
                 <h1>An error occurred</h1>
                 <h4 v-html="err"></h4>
             </div>
+
         </v-card-text>
 
         <v-card-actions>

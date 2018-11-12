@@ -7,7 +7,11 @@ class Member extends Base {
     }
 
     error(params) {
-        throw new Error('fuck');
+        let err = new Error('fuck');
+        
+        err.code = 400;
+
+        throw err;
 
         return params;
     }
@@ -33,20 +37,40 @@ class Member extends Base {
         for(let key in params.files) {
             let file = params.files[key];
             
-            let saveTo = path.join(process.cwd(), 'uploads', file.filename);
+            let saveTo = path.join(process.cwd(), 'uploads');
+            this.fs.ensureDirSync(saveTo);
+            saveTo = path.join(saveTo, file.filename);
 
             file.stream.pipe(this.fs.createWriteStream(saveTo));
         }
         
     }
 
-    _avatar(params, { res }) {
+    async _avatar(params, { res }) {
         console.log(params);
 
-        const path = require('path');
-        let ava = path.join(process.cwd(), 'uploads', 'ava.jpg');
+        /* let wait = new Promise((resolve) => {
+            setTimeout(() => {
+                const path = require('path');
+                let default_ava = path.join(process.cwd(), 'uploads', 'default', 'ava.png');
+                let ava = path.join(process.cwd(), 'uploads', 'ava.jpg');
+                !this.fs.pathExistsSync(ava) && (ava = default_ava);
         
-        res.locals.sendAsFile = true;
+                res.locals.sendAsFile = this.fs.pathExistsSync(ava);
+
+                resolve(ava);
+            }, 150);
+        })
+
+        let ava = await wait;
+        return ava; */
+
+        const path = require('path');
+        let default_ava = path.join(process.cwd(), 'uploads', 'default', 'ava.png');
+        let ava = path.join(process.cwd(), 'uploads', 'ava.jpg');
+        !this.fs.pathExistsSync(ava) && (ava = default_ava);
+
+        res.locals.sendAsFile = this.fs.pathExistsSync(ava);
         return ava;
     }
 }
