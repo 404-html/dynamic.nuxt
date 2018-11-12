@@ -50,9 +50,10 @@ const code = () => {
 
         for(let key of getClassMethodNames(instance)) {
             
-            methods = methods + `${key}: async (params = {}, options = {}) => {
+            methods = methods + 
+            `
+            ${key}: async (params = {}, options = {}) => {
                 
-                //debugger
                 let config = {
                     context: this.context,
                     endpoint: '/${name}.${key}',
@@ -70,7 +71,9 @@ const code = () => {
         
         }
 
-        class_body = class_body + `get ${name}() {
+        class_body = class_body + 
+        `
+        get ${name}() {
             return {
                 ${methods}
             }
@@ -78,7 +81,8 @@ const code = () => {
         `
     }
 
-    const code = `
+    const code = 
+        `
         class Server {
             constructor(args) {
                 this.execute = args.execute;
@@ -88,7 +92,8 @@ const code = () => {
             ${class_body}
         }
         
-        return Server;`
+        return Server;
+        `
 
     return code;
 }

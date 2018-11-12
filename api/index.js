@@ -75,6 +75,79 @@ let multipartDetector = function(req, res, next) {
 };
 
 ///////////////////////////////////////////////////////////////////////////////////////
+
+function Model (schema) {
+    schema = { ...schema, _id: {
+        type: Integer
+    }};
+    
+    return {
+        find: () => {
+
+        },
+
+        findOne: async () => {
+
+        },
+
+        query: async () => {
+
+        },
+
+        save: async () => {
+
+        },
+
+        update: async () => {
+
+        },
+
+        delete: async () => {
+
+        }
+    }
+
+}
+
+///////////////////////////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////////////////////////
+
+class JWT {
+    constructor({ public_key, private_key }) {
+        this.jwt = require('jsonwebtoken');
+    }
+
+    sign(payload, private_key, options = {algorithm: 'RS256', expiresIn: process.env.TOKEN_EXPIRATION_TIME || '3600s'}) {
+        delete payload.iat;
+        delete payload.exp;
+
+        return this.jwt.sign(payload, private_key, options);
+    }
+
+    verify(token, public_key) {
+        let payload = jwt.decode(token);
+
+        try {
+            jwt.verify(token, public_key);
+        }
+        catch(err) {
+            err.name === 'TokenExpiredError' && (payload.expired = true);
+        };
+
+        return payload;
+    }
+
+    refresh(payload, private_key) {
+        return this.sign(payload, private_key);
+    }
+
+    revoke() {
+        //NOT IMPLEMETED YET
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////////////
 const { types, code } = require('./classes');
 
 router.all('/_server_', (req, res) => {
