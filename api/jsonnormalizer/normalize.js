@@ -32,7 +32,21 @@ const normalize = (schemaName, data, store) => {
     }
   }
 
-  return libNormalize(data, isArray ? [schema] : schema)
+  let normalized = libNormalize(data, isArray ? [schema] : schema)
+
+  let _objects_map_ = {};
+
+  for(let key in normalized.entities) {
+      let entity = normalized.entities[key];
+      
+      for(let id in entity) {
+          _objects_map_[id] = entity[id];
+      }
+  }
+
+  normalized = { ...normalized, _objects_map_ };
+  
+  return normalized;
 }
 
 export default normalize

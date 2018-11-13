@@ -23,7 +23,7 @@ const reset = (config = defaultAjvConfig) => {
   }
 }
 
-const loadSchemas = jsonSchemas => _loadSchemas(jsonSchemas, store)
+const loadSchemas = (jsonSchemas, params) => _loadSchemas(jsonSchemas, store, params)
 
 const normalize = curry((modelName, data) => _normalize(modelName, data, store))
 

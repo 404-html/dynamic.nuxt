@@ -78,168 +78,238 @@ let multipartDetector = function(req, res, next) {
 
 let raw_data = 
 {
-    "id": 1,
-    "posts": [
+    _id: 0,
+    posts: [
         {
-            "id": 42,
-            "title": "Lorem Ipsum",
-            "content": "Lorem ipsum dolor sit amet.",
-            "author": {
-                "id": 515,
-                "firstName": "John",
-                "lastName": "Doe",
-                "posts": [
+            _id: 42,
+            title: 'Lorem Ipsum',
+            content: 'Lorem ipsum dolor sit amet.',
+            author: {
+                _id: 515,
+                firstName: 'John',
+                lastName: 'Doe',
+                posts: [
                     {
-                        "id": 42
+                        _id: 42,
+                        title: 'Lorem Ipsum',
+                        author: {
+                            _id: 515,
+                            firstName: 'John',
+                            lastName: 'Doe'
+                        }
                     }
                 ]
             },
-            "comments": [
+            comments: [
                 {
-                    "id": 1,
-                    "content": "This is really good",
-                    "author": {
-                        "id": 313,
-                        "firstName": "Jane",
-                        "lastName": "Doe"
+                    _id: 1,
+                    content: 'This is really good',
+                    author: {
+                        _id: 313,
+                        firstName: 'Jane',
+                        lastName: 'Doe'
                     }
                 },
                 {
-                    "id": 2,
-                    "content": "So helpful, much wow",
-                    "author": {
-                        "id": 211,
-                        "firstName": "John",
-                        "lastName": "Snow"
+                    _id: 2,
+                    content: 'So helpful, much wow',
+                    author: {
+                        _id: 211,
+                        firstName: 'John',
+                        lastName: 'Snow',
+                        __relations__: {
+                            parent: {
+                                _id: 515,
+                                firstName: 'John',
+                                lastName: 'Doe'
+                            }
+                        },
+                        best_friend: {
+                            _id: -515,
+                            since: 2000,
+                            relation: {
+                                _id: 313,
+                                firstName: 'Jane',
+                                lastName: 'Doe'
+                            }
+                        }
                     }
                 },
                 {
-                    "id": 3,
-                    "content": "Thanks for the kind words",
-                    "author": {
-                        "id": 515,
-                        "firstName": "John",
-                        "lastName": "Doe"
+                    _id: 3,
+                    content: 'Thanks for the kind words',
+                    author: {
+                        _id: 515,
+                        firstName: 'John',
+                        lastName: 'Doe',
+                        friends: [
+                            {
+                                _id: -211,
+                                since: 2005,
+                                relation: {
+                                    _id: 211,
+                                    firstName: 'John',
+                                    lastName: 'Snow'
+                                }
+                            },
+                            {
+                                _id: -313,
+                                since: 2006,
+                                relation: {
+                                    _id: 313,
+                                    firstName: 'Jane',
+                                    lastName: 'Doe'
+                                }
+                            }
+                        ]
                     }
                 }
             ],
-            "tags": [
-                "lorem",
-                "ipsum"
+            tags: [
+                'lorem',
+                'ipsum'
             ]
         }
     ]
 }
 
 const database_schema = {
-    "title": "Database",
-    "type": "object",
-    "description": "An entire database",
-    "required": [
-        /* "id",
-        "title",
-        "author" */
+    title: 'Database',
+    type: 'object',
+    description: 'An entire database',
+    required: [
+
     ],
-    "additionalProperties": false,
-    "properties": {
-        "id": {
-            "type": "integer"
+    additionalProperties: false,
+    properties: {
+        _id: {
+            type: 'integer'
         },
-        /* "title": {
-            "type": "string"
-        },
-        "content": {
-            "type": "string"
-        },
-        "author": {
-            "$ref": "#/definitions/Person"
-        }, */
-        "posts": {
-            "type": "array",
-            "items": {
-                "$ref": "#/definitions/Post"
+        posts: {
+            type: 'array',
+            items: {
+                $ref: '#/definitions/Post'
             }
         }
     }
 }
+
 const post_schema = {
-    "title": "Post",
-    "type": "object",
-    "description": "A blog post containing title, content, author & comments",
-    "required": [
-        "id",
-        "title",
-        "author"
+    title: 'Post',
+    type: 'object',
+    description: 'A blog post containing title, content, author & comments',
+    required: [
+        '_id',
+        'title',
+        'author'
     ],
-    "additionalProperties": false,
-    "properties": {
-        "id": {
-            "type": "integer"
+    additionalProperties: false,
+    properties: {
+        _id: {
+            type: 'integer'
         },
-        "title": {
-            "type": "string"
+        title: {
+            type: 'string'
         },
-        "content": {
-            "type": "string"
+        content: {
+            type: 'string'
         },
-        "author": {
-            "$ref": "#/definitions/Person"
+        author: {
+            $ref: '#/definitions/Person'
         },
-        "comments": {
-            "type": "array",
-            "items": {
-                "$ref": "#/definitions/Comment"
+        comments: {
+            type: 'array',
+            items: {
+                $ref: '#/definitions/Comment'
             }
         }
     }
 }
 
 const comment_schema = {
-    "title": "Comment",
-    "type": "object",
-    "description": "A comment containing content & author",
-    "required": [
-        "id",
-        "author",
-        "content"
+    title: 'Comment',
+    type: 'object',
+    description: 'A comment containing content & author',
+    required: [
+        '_id',
+        'author',
+        'content'
     ],
-    "properties": {
-        "id": {
-            "type": "integer"
+    properties: {
+        _id: {
+            type: 'integer'
         },
-        "content": {
-            "type": "string"
+        content: {
+            type: 'string'
         },
-        "author": {
-            "$ref": "#/definitions/Person"
+        author: {
+            $ref: '#/definitions/Person'
+        }
+    }
+}
+
+const person2person_schema = {
+    title: 'Friend',
+    type: 'object',
+    description: '',
+    required: [
+    ],
+    properties: {
+        _id: {
+            type: 'integer',
+            default: -1
+        },
+        since: {
+            type: 'integer'
+        },
+        relation: {
+            $ref: '#/definitions/Person'
         }
     }
 }
 
 const person_schema = {
-    "title": "Person",
-    "type": "object",
-    "description": "A comment containing content & author",
-    "required": [
-        "id",
-        "firstName",
-        "lastName"
+    title: 'Person',
+    type: 'object',
+    description: 'A comment containing content & author',
+    required: [
+        '_id',
+        'firstName',
+        'lastName'
     ],
-    "properties": {
-        "id": {
-            "type": "integer"
+    properties: {
+        _id: {
+            type: 'integer'
         },
-        "firstName": {
-            "type": "string"
+        firstName: {
+            type: 'string'
         },
-        "lastName": {
-            "type": "string"
+        lastName: {
+            type: 'string'
         },
-        "posts": {
-            "type": "array",
-            "items": {
-                "$ref": "#/definitions/Post"
+        posts: {
+            type: 'array',
+            items: {
+                $ref: '#/definitions/Post'
             }
+        },
+        __relations__: {
+            type: 'object',
+            properties: { 
+                parent: {
+                    $ref: '#/definitions/Person'
+                }
+            }
+        },
+        best_friend: {
+            $ref: '#/definitions/Friend'
+        },
+        friends: {
+            type: 'array',
+            items: {
+                $ref: '#/definitions/Friend'
+            }
+            
         }
     }
 }
@@ -248,12 +318,12 @@ const person_schema = {
 const { loadSchemas, normalize } = require('./jsonnormalizer');
 
 // Pass an array of schemas to define them
-loadSchemas([person_schema, post_schema, comment_schema, database_schema]);
+loadSchemas([person_schema, post_schema, comment_schema, database_schema, person2person_schema], { id_attribute: '_id'});
 
 // Then call normalize with schema name & your denormalized data
 const normalized_data = normalize('Database', raw_data);
 
-console.log(normalized_data);
+console.log(JSON.stringify(normalized_data, void 0, 2));
 ///////////////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////////////////////////////////////////
