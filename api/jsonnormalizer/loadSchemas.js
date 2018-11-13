@@ -6,65 +6,72 @@ const normalizeSchemaName = name => name.indexOf('#/definitions/') === -1 ? `#/d
 const loadSchemas = (jsonSchemas, store, params) => {
     let { id_attribute } = params;
 
-  jsonSchemas.forEach(schema => {
-    const { title } = schema
-    debug(`Adding ${title} to AJV & Schemas`)
-    store.ajv.addSchema(schema, normalizeSchemaName(title))
-    store.schemas[title] = parseJsonSchema(schema, id_attribute)
-  })
+    jsonSchemas.forEach(schema => {
+        const { title } = schema
+        debug(`Adding ${title} to AJV & Schemas`)
+        store.ajv.addSchema(schema, normalizeSchemaName(title))
+        store.schemas[title] = parseJsonSchema(schema, id_attribute)
+    });
 
-  jsonSchemas.forEach(schema => {
-    const { title } = schema
-    debug(`Adding ${title} to AJV & Schemas`)
-    parseRefs(schema, jsonSchemas, store.schemas[title], store.schemas)
-  })
+    let map = [];
+
+    jsonSchemas.forEach(schema => {
+        const { title } = schema
+        debug(`Adding ${title} to AJV & Schemas`)
+        map = [ ...map, ...parseRefs(schema, jsonSchemas, store.schemas[title], store.schemas) ]
+    });
+
+    return map;
 }
 
 const parseRefs = (schema, jsonSchemas, entity, entities) => {
     const { title, properties, allOf, oneOf, anyOf } = schema
   
     let define = (props, parent) => {
+        let map = [];
+
         Object.getOwnPropertyNames(props).forEach(key => {
             const { $ref, type, items } = props[key]
-    
+
             if(type !== 'object') {
                 if ($ref) {
                     let schemaName = $ref.replace('#/definitions/', '');
+                                        
+                    entity.define(parent ? { [parent]: { [key]: entities[schemaName] }} : { [key]: entities[schemaName] });
 
-                    if(parent) {
-                        entity.define({
-                            [parent]: {
-                                [key]: entities[schemaName]
+                    map.push({
+                        [title]: {
+                            [schemaName]: {
+                                path: parent ? `${parent}.${key}` : `${key}`,
+                                type: 'object'
                             }
-                        })
-                    }
-                    else {
-                        entity.define({
-                            [key]: entities[schemaName]
-                        })
-                    }
+                        }
+                    });
+
                 } else if (type === 'array' && items && items.$ref) {
                     let schemaName = items.$ref.replace('#/definitions/', '');
 
-                    if(parent) {
-                        entity.define({
-                            [parent]: {
-                                [key]: [entities[schemaName]]
+                    entity.define(parent ? { [parent]: { [key]: [entities[schemaName]] }} : { [key]: [entities[schemaName]] });
+
+                    map.push({
+                        [title]: {
+                            [schemaName]: {
+                                path: parent ? `${parent}.${key}` : `${key}`,
+                                type: 'array'
                             }
-                        })
-                    }
-                    else {
-                        entity.define({
-                            [key]: [entities[schemaName]]
-                        })
-                    }
+                        }
+                    });
                 }
             }
-            else define(props[key].properties, key);
-        })
+            else map = [ ...map, ...define(props[key].properties, key) ];
+        });
+
+        return map;
     };
 
-    define(properties);
+    let map = define(properties);
+
+    return map;
 }
 
 const parseJsonSchema = (schema, id_attribute) => {
@@ -100,34 +107,5 @@ const parseJsonSchema = (schema, id_attribute) => {
         idAttribute: id_attribute
     })
 }
-
-/* const resolveSchema = (schemaName, jsonSchemas, store) => {
-  schemaName = schemaName.replace('#/definitions/', '')
-
-  if(resolved[schemaName]) return {};
-
-  if (store.schemas[schemaName]) {
-    return store.schemas[schemaName]
-  } else {
-    debug(
-      `Schema '${schemaName}' is not defined yet. Trying to find it in raw schemas array and define it.`
-    )
-
-    const foundSchema = jsonSchemas.find(schema => schema.title === schemaName && schema);
-
-    if (!foundSchema) {
-      throw new Error(
-        `Schema ${schemaName} cannot be defined! Some other schema referenced it, but it was not defined.`
-      )
-    }
-
-    const schema = parseJsonSchema(foundSchema, jsonSchemas, store)
-    store.schemas[schemaName] = schema
-
-    debug(`Schema '${schemaName}' was found and added to collection.`)
-
-    return schema
-  }
-} */
 
 export default loadSchemas

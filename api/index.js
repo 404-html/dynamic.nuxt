@@ -142,6 +142,14 @@ let raw_data =
                         _id: 515,
                         firstName: 'John',
                         lastName: 'Doe',
+                        wife: {
+                            since: 2001,
+                            relation: {
+                                _id: 313,
+                                firstName: 'Jane',
+                                lastName: 'Doe'
+                            }
+                        },
                         friends: [
                             {
                                 _id: -211,
@@ -309,7 +317,17 @@ const person_schema = {
             items: {
                 $ref: '#/definitions/Friend'
             }
-            
+        },
+        wife: {
+            type: 'object',
+            properties: { 
+                since: {
+                    type: 'integer'
+                },
+                relation: {
+                    $ref: '#/definitions/Person'
+                }
+            }
         }
     }
 }
@@ -318,7 +336,7 @@ const person_schema = {
 const { loadSchemas, normalize } = require('./jsonnormalizer');
 
 // Pass an array of schemas to define them
-loadSchemas([person_schema, post_schema, comment_schema, database_schema, person2person_schema], { id_attribute: '_id'});
+let map = loadSchemas([person_schema, post_schema, comment_schema, database_schema, person2person_schema], { id_attribute: '_id'});
 
 // Then call normalize with schema name & your denormalized data
 const normalized_data = normalize('Database', raw_data);
