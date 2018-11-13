@@ -76,39 +76,184 @@ let multipartDetector = function(req, res, next) {
 
 ///////////////////////////////////////////////////////////////////////////////////////
 
-function Model (schema) {
-    schema = { ...schema, _id: {
-        type: Integer
-    }};
-    
-    return {
-        find: () => {
-
-        },
-
-        findOne: async () => {
-
-        },
-
-        query: async () => {
-
-        },
-
-        save: async () => {
-
-        },
-
-        update: async () => {
-
-        },
-
-        delete: async () => {
-
+let raw_data = 
+{
+    "id": 1,
+    "posts": [
+        {
+            "id": 42,
+            "title": "Lorem Ipsum",
+            "content": "Lorem ipsum dolor sit amet.",
+            "author": {
+                "id": 515,
+                "firstName": "John",
+                "lastName": "Doe",
+                "posts": [
+                    {
+                        "id": 42
+                    }
+                ]
+            },
+            "comments": [
+                {
+                    "id": 1,
+                    "content": "This is really good",
+                    "author": {
+                        "id": 313,
+                        "firstName": "Jane",
+                        "lastName": "Doe"
+                    }
+                },
+                {
+                    "id": 2,
+                    "content": "So helpful, much wow",
+                    "author": {
+                        "id": 211,
+                        "firstName": "John",
+                        "lastName": "Snow"
+                    }
+                },
+                {
+                    "id": 3,
+                    "content": "Thanks for the kind words",
+                    "author": {
+                        "id": 515,
+                        "firstName": "John",
+                        "lastName": "Doe"
+                    }
+                }
+            ],
+            "tags": [
+                "lorem",
+                "ipsum"
+            ]
         }
-    }
-
+    ]
 }
 
+const database_schema = {
+    "title": "Database",
+    "type": "object",
+    "description": "An entire database",
+    "required": [
+        /* "id",
+        "title",
+        "author" */
+    ],
+    "additionalProperties": false,
+    "properties": {
+        "id": {
+            "type": "integer"
+        },
+        /* "title": {
+            "type": "string"
+        },
+        "content": {
+            "type": "string"
+        },
+        "author": {
+            "$ref": "#/definitions/Person"
+        }, */
+        "posts": {
+            "type": "array",
+            "items": {
+                "$ref": "#/definitions/Post"
+            }
+        }
+    }
+}
+const post_schema = {
+    "title": "Post",
+    "type": "object",
+    "description": "A blog post containing title, content, author & comments",
+    "required": [
+        "id",
+        "title",
+        "author"
+    ],
+    "additionalProperties": false,
+    "properties": {
+        "id": {
+            "type": "integer"
+        },
+        "title": {
+            "type": "string"
+        },
+        "content": {
+            "type": "string"
+        },
+        "author": {
+            "$ref": "#/definitions/Person"
+        },
+        "comments": {
+            "type": "array",
+            "items": {
+                "$ref": "#/definitions/Comment"
+            }
+        }
+    }
+}
+
+const comment_schema = {
+    "title": "Comment",
+    "type": "object",
+    "description": "A comment containing content & author",
+    "required": [
+        "id",
+        "author",
+        "content"
+    ],
+    "properties": {
+        "id": {
+            "type": "integer"
+        },
+        "content": {
+            "type": "string"
+        },
+        "author": {
+            "$ref": "#/definitions/Person"
+        }
+    }
+}
+
+const person_schema = {
+    "title": "Person",
+    "type": "object",
+    "description": "A comment containing content & author",
+    "required": [
+        "id",
+        "firstName",
+        "lastName"
+    ],
+    "properties": {
+        "id": {
+            "type": "integer"
+        },
+        "firstName": {
+            "type": "string"
+        },
+        "lastName": {
+            "type": "string"
+        },
+        "posts": {
+            "type": "array",
+            "items": {
+                "$ref": "#/definitions/Post"
+            }
+        }
+    }
+}
+
+//const { loadSchemas, normalize } = require('json-schema-normalizer');
+const { loadSchemas, normalize } = require('./jsonnormalizer');
+
+// Pass an array of schemas to define them
+loadSchemas([person_schema, post_schema, comment_schema, database_schema]);
+
+// Then call normalize with schema name & your denormalized data
+const normalized_data = normalize('Database', raw_data);
+
+console.log(normalized_data);
 ///////////////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////////////////////////////////////////
