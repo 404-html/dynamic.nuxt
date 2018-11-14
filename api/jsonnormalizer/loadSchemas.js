@@ -25,26 +25,30 @@ const loadSchemas = (jsonSchemas, store, params) => {
 }
 
 const parseRefs = (schema, jsonSchemas, entity, entities) => {
-    const { title, properties, allOf, oneOf, anyOf } = schema
+    const { title, type, properties, allOf, oneOf, anyOf } = schema
   
-    let define = (props, parent) => {
+    let define = (props, parent, parent_type) => {
         let map = [];
 
         Object.getOwnPropertyNames(props).forEach(key => {
             const { $ref, type, items } = props[key]
 
-            if(type !== 'object') {
+            let deep = ['array', 'object'].includes(type);
+            deep && type === 'array' && !Array.isArray(props[key].items) && (deep = false);
+
+            if(!deep) {
                 if ($ref) {
                     let schemaName = $ref.replace('#/definitions/', '');
                                         
-                    entity.define(parent ? { [parent]: { [key]: entities[schemaName] }} : { [key]: entities[schemaName] });
+                    entity.define(parent ? { [parent]: parent_type === 'array' ? [{ [key]: entities[schemaName] }] : { [key]: entities[schemaName] }} : parent_type === 'array' ? [{ [key]: entities[schemaName] }] : { [key]: entities[schemaName] });
+                    //entity.define(parent ? { [parent]: { [key]: entities[schemaName] }} : { [key]: entities[schemaName] });
+                    //entity.define(parent ? { [parent]: { [key]: parent_type === 'array' ? [entities[schemaName]] : entities[schemaName] }} : { [key]: parent_type === 'array' ? [entities[schemaName]] : entities[schemaName] });
 
                     map.push({
                         [title]: {
-                            [schemaName]: {
-                                path: parent ? `${parent}.${key}` : `${key}`,
-                                type: 'object'
-                            }
+                            path: parent ? `${parent}.${key}` : `${key}`,
+                            type: parent_type || 'object',
+                            links: schemaName
                         }
                     });
 
@@ -55,15 +59,14 @@ const parseRefs = (schema, jsonSchemas, entity, entities) => {
 
                     map.push({
                         [title]: {
-                            [schemaName]: {
-                                path: parent ? `${parent}.${key}` : `${key}`,
-                                type: 'array'
-                            }
+                            path: parent ? `${parent}.${key}` : `${key}`,
+                            type: 'array',
+                            links: schemaName
                         }
                     });
                 }
             }
-            else map = [ ...map, ...define(props[key].properties, key) ];
+            else map = [ ...map, ...define(type === 'object' ? props[key].properties : props[key].items[0].properties, key, type) ];
         });
 
         return map;

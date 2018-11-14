@@ -132,6 +132,14 @@ let raw_data =
                                 firstName: 'Jane',
                                 lastName: 'Doe'
                             }
+                        },
+                        best_friend1: {
+                            _id: 313,
+                            firstName: 'Jane',
+                            lastName: 'Doe',
+                            $props: {
+                                since: 2000,
+                            }
                         }
                     }
                 },
@@ -144,12 +152,40 @@ let raw_data =
                         lastName: 'Doe',
                         wife: {
                             since: 2001,
-                            relation: {
+                            till: 2005,
+                            $link: {
                                 _id: 313,
                                 firstName: 'Jane',
                                 lastName: 'Doe'
                             }
                         },
+                        wives: [
+                            {
+                                _id: -211001,
+                                $props: {
+                                    since: 2006,
+                                    till: 2015,
+                                    fix: true
+                                },
+                                $link: {
+                                    _id: 313,
+                                    firstName: 'Jane',
+                                    lastName: 'Doe'
+                                }
+                            },
+                            {
+                                _id: -211000,
+                                $props: {
+                                    since: 2001,
+                                    till: 2005,
+                                },
+                                $link: {
+                                    _id: 313,
+                                    firstName: 'Jane',
+                                    lastName: 'Doe'
+                                }
+                            },
+                        ],
                         friends: [
                             {
                                 _id: -211,
@@ -276,6 +312,39 @@ const person2person_schema = {
     }
 }
 
+const wife_link_schema = {
+    title: 'wife',
+    type: 'object',
+    description: '',
+    required: [
+        '_id', '$link'
+    ],
+    additionalProperties: false,
+    properties: {
+        _id: {
+            type: 'integer',
+        },
+        $props: {
+            type: 'object',
+            required: [
+                'since', 'till'
+            ],
+            additionalProperties: false,
+            properties: {
+                since: {
+                    type: 'integer'
+                },
+                till: {
+                    type: 'integer'
+                }
+            }
+        },
+        $link: {
+            $ref: '#/definitions/Person'
+        }
+    }
+}
+
 const person_schema = {
     title: 'Person',
     type: 'object',
@@ -285,6 +354,7 @@ const person_schema = {
         'firstName',
         'lastName'
     ],
+    additionalProperties: false,
     properties: {
         _id: {
             type: 'integer'
@@ -295,7 +365,7 @@ const person_schema = {
         lastName: {
             type: 'string'
         },
-        posts: {
+        /* posts: {
             type: 'array',
             items: {
                 $ref: '#/definitions/Post'
@@ -312,23 +382,86 @@ const person_schema = {
         best_friend: {
             $ref: '#/definitions/Friend'
         },
+        best_friend1: {
+            $ref: '#/definitions/Person',
+            $props: {
+                type: 'object',
+                properties: {
+                    since: 'integer'
+                }
+            }
+        },
         friends: {
             type: 'array',
             items: {
                 $ref: '#/definitions/Friend'
             }
-        },
-        wife: {
+        }, */
+        /* best_friend1: {
+            $ref: '#/definitions/Person',
+            $props: {
+                type: 'object',
+                properties: {
+                    since: 'integer'
+                }
+            }
+        }, */
+        
+        /* wife: {
             type: 'object',
+            required: [
+                'since', 'till', '$link'
+            ],
             properties: { 
                 since: {
                     type: 'integer'
                 },
-                relation: {
+                till: {
+                    type: 'integer'
+                },
+                $link: {
                     $ref: '#/definitions/Person'
                 }
             }
-        }
+        } */
+        /* wives: { 
+            type: 'array',
+            items: {
+                $ref: '#/definitions/wife'
+            }
+        }, */
+        wives: { //WORKING VARIANT
+            type: 'array',
+            items: [
+                {
+                    type: 'object',
+                    required: [
+                        '$link'
+                    ],
+                    additionalProperties: false,
+                    properties: { 
+                        $props: {
+                            type: 'object',
+                            required: [
+                                'since', 'till'
+                            ],
+                            additionalProperties: false,
+                            properties: {
+                                since: {
+                                    type: 'integer'
+                                },
+                                till: {
+                                    type: 'integer'
+                                },
+                            }
+                        },
+                        $link: {
+                            $ref: '#/definitions/Person'
+                        }
+                    }
+                }
+            ]
+        },
     }
 }
 
@@ -336,12 +469,18 @@ const person_schema = {
 const { loadSchemas, normalize } = require('./jsonnormalizer');
 
 // Pass an array of schemas to define them
-let map = loadSchemas([person_schema, post_schema, comment_schema, database_schema, person2person_schema], { id_attribute: '_id'});
+let map = loadSchemas([person_schema, post_schema, comment_schema, database_schema, person2person_schema, wife_link_schema], { id_attribute: '_id'});
 
 // Then call normalize with schema name & your denormalized data
-const normalized_data = normalize('Database', raw_data);
+try {
+    const normalized_data = normalize('Database', raw_data);
 
-console.log(JSON.stringify(normalized_data, void 0, 2));
+    console.log(JSON.stringify(normalized_data, void 0, 2));
+}
+catch(err) {
+    console.err(err);
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////////////////////////////////////////

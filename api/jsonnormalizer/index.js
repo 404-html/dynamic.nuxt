@@ -9,7 +9,7 @@ const defaultAjvConfig = {
   schemaId: 'title',
   allErrors: true,
   verbose: true,
-  removeAdditional: 'failing',
+  removeAdditional: true,
   useDefaults: true
 }
 
