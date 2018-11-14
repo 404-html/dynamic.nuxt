@@ -9,8 +9,14 @@ const defaultAjvConfig = {
   schemaId: 'title',
   allErrors: true,
   verbose: true,
-  removeAdditional: true,
-  useDefaults: true
+  removeAdditional: 'all',
+  useDefaults: true,
+  extendRefs: true,
+  $data: true,
+  loadSchema: (uri) => {
+      debugger
+    console.log(uri);
+  }
 }
 
 let store
@@ -20,7 +26,8 @@ const reset = (config = defaultAjvConfig) => {
     ajv: new Ajv(config),
     schemas: {},
     jsonSchemas: {}
-  }
+  };
+  require('ajv-keywords')(store.ajv);
 }
 
 const loadSchemas = (jsonSchemas, params) => _loadSchemas(jsonSchemas, store, params)

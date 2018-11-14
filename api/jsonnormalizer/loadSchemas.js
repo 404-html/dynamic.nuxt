@@ -52,18 +52,25 @@ const parseRefs = (schema, jsonSchemas, entity, entities) => {
                         }
                     });
 
-                } else if (type === 'array' && items && items.$ref) {
-                    let schemaName = items.$ref.replace('#/definitions/', '');
+                } else if (type === 'array' && items) {
+                    if(items.$ref) {
+                        let schemaName = items.$ref.replace('#/definitions/', '');
 
-                    entity.define(parent ? { [parent]: { [key]: [entities[schemaName]] }} : { [key]: [entities[schemaName]] });
+                        entity.define(parent ? { [parent]: { [key]: [entities[schemaName]] }} : { [key]: [entities[schemaName]] });
 
-                    map.push({
-                        [title]: {
-                            path: parent ? `${parent}.${key}` : `${key}`,
-                            type: 'array',
-                            links: schemaName
+                        map.push({
+                            [title]: {
+                                path: parent ? `${parent}.${key}` : `${key}`,
+                                type: 'array',
+                                links: schemaName
+                            }
+                        });
+                    }
+                    else {
+                        if(items.type === 'object' && items.properties) {
+                            map = [ ...map, ...define(items.properties, key, type) ];
                         }
-                    });
+                    }
                 }
             }
             else map = [ ...map, ...define(type === 'object' ? props[key].properties : props[key].items[0].properties, key, type) ];

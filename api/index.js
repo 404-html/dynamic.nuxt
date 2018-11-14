@@ -151,13 +151,22 @@ let raw_data =
                         firstName: 'John',
                         lastName: 'Doe',
                         wife: {
-                            since: 2001,
-                            till: 2005,
+                            $props: {
+                                since: 2006,
+                                till: 2015,
+                                fix: true
+                            },
                             $link: {
                                 _id: 313,
                                 firstName: 'Jane',
                                 lastName: 'Doe'
                             }
+                        },
+                        wife1: {
+                            fix: true,
+                            _id: 313,
+                            firstName: 'Jane',
+                            lastName: 'Doe'
                         },
                         wives: [
                             {
@@ -232,14 +241,28 @@ const database_schema = {
         posts: {
             type: 'array',
             items: {
-                $ref: '#/definitions/Post'
+                $ref: '#/definitions/:Object:Post'
             }
         }
     }
 }
 
+const object_schema = {
+    title: ':Object',
+    type: 'object',
+    description: 'Root type',
+    required: [
+        '_id',
+    ],
+    properties: {
+        _id: {
+            type: 'integer'
+        }
+    }
+}
+
 const post_schema = {
-    title: 'Post',
+    title: ':Object:Post',
     type: 'object',
     description: 'A blog post containing title, content, author & comments',
     required: [
@@ -430,37 +453,62 @@ const person_schema = {
                 $ref: '#/definitions/wife'
             }
         }, */
-        wives: { //WORKING VARIANT
-            type: 'array',
-            items: [
-                {
+        wife: {
+            type: 'object',
+            required: [
+                '$link'
+            ],
+            properties: { 
+                $props: {
                     type: 'object',
                     required: [
-                        '$link'
+                        'since', 'till'
                     ],
-                    additionalProperties: false,
-                    properties: { 
-                        $props: {
-                            type: 'object',
-                            required: [
-                                'since', 'till'
-                            ],
-                            additionalProperties: false,
-                            properties: {
-                                since: {
-                                    type: 'integer'
-                                },
-                                till: {
-                                    type: 'integer'
-                                },
-                            }
+                    properties: {
+                        since: {
+                            type: 'integer'
                         },
-                        $link: {
-                            $ref: '#/definitions/Person'
+                        till: {
+                            type: 'integer'
+                        },
+                    }
+                },
+                $link: {
+                    $ref: '#/definitions/Person'
+                }
+            }
+        },
+        wife1: {
+            $ref: '#/definitions/Person'    
+        },
+        
+        wives: { //WORKING VARIANT
+            type: 'array',
+            items: {
+                type: 'object',
+                required: [
+                    '$link'
+                ],
+                properties: { 
+                    $props: {
+                        type: 'object',
+                        required: [
+                            'since', 'till'
+                        ],
+                        properties: {
+                            since: {
+                                type: 'integer'
+                            },
+                            till: {
+                                type: 'integer'
+                            },
                         }
+                    },
+                    $link: {
+                        $ref: '#/definitions/Person'
                     }
                 }
-            ]
+            }
         },
     }
 }
