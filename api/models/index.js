@@ -5,7 +5,30 @@ import Ajv from 'ajv';
 import deepmerge from 'deepmerge';
 import { schema as Schema, normalize } from 'normalizr';
 
-import { driver } from './db';
+import { driver } from '../db';
+
+const stringify = (obj_from_json) => {
+    if(typeof obj_from_json !== "object" || Array.isArray(obj_from_json)){
+        // not an object, stringify using native function
+        return JSON.stringify(obj_from_json);
+    }
+    // Implements recursive object serialization according to JSON spec
+    // but without quotes around the keys.
+    let props = Object
+        .keys(obj_from_json)
+        .map(key => `${key}:${stringify(obj_from_json[key])}`)
+        .join(",");
+    return `{${props}}`;
+};
+
+const parseLabels = (labels) => {
+    return labels.split(':').reduce((memo, label) => {
+        label && memo.push(label);
+
+        return memo;
+    }, []);
+};
+
 
 const config = {
     schemaId: 'title',
@@ -30,6 +53,7 @@ class Model {
         this.ajv = ajv;
         this._schema = schemas[this.title];
         this.maps = maps;
+        this.map = maps[this.title];
 
         const handler = {
             get(target, key, receiver) {
@@ -74,33 +98,43 @@ class Model {
             let map = {};
     
             Object.getOwnPropertyNames(props).forEach(key => {
-                const { $ref, type, items } = props[key]
+                let { $ref, $rel, type, items } = props[key]
     
                 let deep = ['array', 'object'].includes(type);
                 deep && type === 'array' && !Array.isArray(props[key].items) && (deep = false);
     
                 if(!deep) {
                     if ($ref) {
+                        $rel = $rel || $ref;
+
                         let schemaName = $ref.replace('#/definitions/', '');
                                             
                         this._schema.define(parent ? { [parent]: parent_type === 'array' ? [{ [key]: schemas[schemaName] }] : { [key]: schemas[schemaName] }} : parent_type === 'array' ? [{ [key]: schemas[schemaName] }] : { [key]: schemas[schemaName] });
                         
-                        let path = parent ? `${parent}.${key}` : `${key}`;
+                        let path = parent || key;
+                        //let path = parent ? `${parent}.${key}` : `${key}`;
                         map[path] = {
+                            path: parent ? `${parent}.${key}` : `${key}`,
                             type: parent_type || 'object',
-                            links: schemaName
+                            links: module.exports[schemaName],
+                            $rel
                         }
     
                     } else if (type === 'array' && items) {
                         if(items.$ref) {
+                            $rel = items.$rel || items.$ref;
+
                             let schemaName = items.$ref.replace('#/definitions/', '');
     
                             this._schema.define(parent ? { [parent]: { [key]: [schemas[schemaName]] }} : { [key]: [schemas[schemaName]] });
     
-                            let path = parent ? `${parent}.${key}` : `${key}`;
+                            let path = parent || key;
+                            //let path = parent ? `${parent}.${key}` : `${key}`;
                             map[path] = {
+                                path: parent ? `${parent}.${key}` : `${key}`,
                                 type: 'array',
-                                links: schemaName
+                                links: module.exports[schemaName],
+                                $rel
                             }
                         }
                         else {
@@ -127,7 +161,7 @@ class Model {
 
     get schema() {
         return {
-            title: this.title,
+            title: '',
             type: 'object',
             required: [
                 '_id'
@@ -140,8 +174,73 @@ class Model {
         }
     }
 
-    async find() {
-        return await driver.query('MATCH (n :Участник) RETURN n LIMIT 10');
+    async find(params = {}, options = { /* skip: 0, limit: 10 */ }) {
+        const helpers = require('decypher').helpers;
+        const Query = require('decypher').Query;
+
+        let queries = [];
+        let lss = this.labels;
+
+        params = Object.entries(params).reduce((memo, entry) => {
+            let [key, value] = entry;
+
+            let map = this.map[key];
+            if(!map) {
+                memo[key] = value
+            }
+            else {
+                if(value) {
+                    let { $props, $link } = value || {};
+
+                    let cql = helpers.relationshipPattern({
+                        direction: 'out',
+                        type: map.$rel,
+                        identifier: `${key}_rel`,
+                        data: $props ? { ...$props } : void 0,
+                        source: 'node',
+                        target: {
+                            identifier: key,
+                            label: parseLabels((new map.links()).labels),
+                            data: $link ? { ...$link } : void 0
+                        }
+                    });
+
+                    queries.push(cql);
+                }
+            }
+
+            return memo;
+        }, {});
+
+        console.log(this.map);
+
+        let cql = helpers.nodePattern({
+            identifier: 'node',
+            labels: parseLabels(this.labels),
+            data: { ...params },
+        });
+
+        queries.splice(0, 0, cql);
+        cql = queries.join('\r\n');
+
+        cql = new Query()
+            .match(cql)
+            //.where('n.title = {title}', {title: 'The best title'})
+            .return('node');
+
+        cql = cql.toString();
+
+        let inject = stringify(params);
+
+        return await driver.query({ model: this, cql }, {}, options); 
+        
+    }
+
+    get labels() {
+        let root = this.__proto__.__proto__ ? this.__proto__.__proto__.labels : '';
+
+        return `${root}${this.schema.title === '' ? '' : `:${this.schema.title || this.title}`}`;
+        //return `${this.schema.title === '' ? '' : `${this.schema.title || this.title}`}`;
     }
 }
 
@@ -152,7 +251,7 @@ class Database extends Model {
 
     get schema() {
         let schema = {
-            title: this.title,
+            title: 'database',
             required: [
                 'posts',
             ],
@@ -168,6 +267,124 @@ class Database extends Model {
                     items: {
                         $ref: 'Post'
                     }
+                } 
+            }
+        }
+
+        return schema;
+    }
+}
+
+class Member extends Model {
+    constructor(data) {
+        super(data);
+    }
+
+    get schema() {
+        let schema = {
+            title: 'Участник',
+            type: 'object',
+            required: [
+                'name',
+            ],
+            properties: {
+                name: {
+                    type: 'string'
+                },
+                hash: {
+                    type: 'string'
+                },
+                ref: {
+                    type: 'string'
+                },
+                group: {
+                    type: 'string'
+                },
+                picture: {
+                    type: 'string'
+                },
+                compressed: {
+                    type: 'string'
+                },
+                country: {
+                    type: 'string'
+                },
+                phone: {
+                    type: 'string'
+                },
+                city: {
+                    type: 'string'
+                },
+                donate: {
+                    type: 'string'
+                },
+                referer: {
+                    /* $rel: 'реферер',
+                    $ref: 'Member' */
+                
+                    type: 'object',
+                    required: [
+                        '$link'
+                    ],
+                    properties: { 
+                        $props: {
+                            type: 'object',
+                            required: [
+                                'invite'
+                            ],
+                            properties: {
+                                invite: {
+                                    type: 'integer'
+                                }
+                            }
+                        },
+                        $link: {
+                            $rel: 'реферер',
+                            $ref: 'Member'
+                        }
+                    }
+                    
+                },
+                referals: {
+                    /* type: 'array',
+                    items: {
+                        $rel: 'реферал',
+                        $ref: 'Member'
+                    } */
+                    $rel: 'реферал',
+                    $ref: 'Member'
+                } 
+            }
+        }
+
+        return schema;
+    }
+}
+
+class Email extends Model {
+    constructor(data) {
+        super(data);
+    }
+
+    get schema() {
+        let schema = {
+            title: 'Список',
+            required: [
+                'members',
+            ],
+            properties: {
+                address: {
+                    type: 'string'
+                },
+                pin: {
+                    type: 'string'
+                },
+                verified: {
+                    type: 'boolean'
+                },
+                member: {
+                    $rel: 'принадлежит',
+                    $ref: 'Member'
                 } 
             }
         }
@@ -197,11 +414,13 @@ class Post extends Model {
                     type: 'string'
                 },
                 author: {
+                    $rel: 'написал',
                     $ref: 'Person'
                 },
                 comments: {
                     type: 'array',
                     items: {
+                        $rel: 'получил',
                         $ref: 'Comment'
                     }
                 } 
@@ -392,7 +611,7 @@ class Person extends Model {
     }
 }
 
-module.exports = { Database, Post, Comment, Person };
+module.exports = { Database, Post, Comment, Person, Member, Email };
 
 Object.entries(module.exports).forEach(entry => {
     let [ name, constructor ] = entry;

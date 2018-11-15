@@ -283,13 +283,15 @@ const wife_link_schema = {
 
     let res = (async () => {
         try {
-            const { Database, Post } = require('./models');
+            const { Database, Member } = require('./models');
             let database = new Database({ data: raw_data });
             let normalized_data = database.normalize();
 
             console.log(JSON.stringify(normalized_data, void 0, 2));
 
-            return await database.find({ _id: 0 });
+            let member = new Member();
+            let data = await member.find({ _id: 2580, referer: { $link: { _id: 2222 }}, referals: true });
+            return data;
         }
         catch(err) {
             console.err(err);
