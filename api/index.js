@@ -92,6 +92,7 @@ let raw_data =
                     {
                         _id: 42,
                         title: 'Lorem Ipsum',
+                        content: 'Lorem ipsum dolor sit amet.',
                         author: {
                             _id: 515,
                             firstName: 'John',
@@ -226,95 +227,6 @@ let raw_data =
     ]
 }
 
-const database_schema = {
-    title: 'Database',
-    type: 'object',
-    description: 'An entire database',
-    required: [
-
-    ],
-    additionalProperties: false,
-    properties: {
-        _id: {
-            type: 'integer'
-        },
-        posts: {
-            type: 'array',
-            items: {
-                $ref: '#/definitions/:Object:Post'
-            }
-        }
-    }
-}
-
-const object_schema = {
-    title: ':Object',
-    type: 'object',
-    description: 'Root type',
-    required: [
-        '_id',
-    ],
-    properties: {
-        _id: {
-            type: 'integer'
-        }
-    }
-}
-
-const post_schema = {
-    title: ':Object:Post',
-    type: 'object',
-    description: 'A blog post containing title, content, author & comments',
-    required: [
-        '_id',
-        'title',
-        'author'
-    ],
-    additionalProperties: false,
-    properties: {
-        _id: {
-            type: 'integer'
-        },
-        title: {
-            type: 'string'
-        },
-        content: {
-            type: 'string'
-        },
-        author: {
-            $ref: '#/definitions/Person'
-        },
-        comments: {
-            type: 'array',
-            items: {
-                $ref: '#/definitions/Comment'
-            }
-        }
-    }
-}
-
-const comment_schema = {
-    title: 'Comment',
-    type: 'object',
-    description: 'A comment containing content & author',
-    required: [
-        '_id',
-        'author',
-        'content'
-    ],
-    properties: {
-        _id: {
-            type: 'integer'
-        },
-        content: {
-            type: 'string'
-        },
-        author: {
-            $ref: '#/definitions/Person'
-        }
-    }
-}
-
 const person2person_schema = {
     title: 'Friend',
     type: 'object',
@@ -368,166 +280,23 @@ const wife_link_schema = {
     }
 }
 
-const person_schema = {
-    title: 'Person',
-    type: 'object',
-    description: 'A comment containing content & author',
-    required: [
-        '_id',
-        'firstName',
-        'lastName'
-    ],
-    additionalProperties: false,
-    properties: {
-        _id: {
-            type: 'integer'
-        },
-        firstName: {
-            type: 'string'
-        },
-        lastName: {
-            type: 'string'
-        },
-        /* posts: {
-            type: 'array',
-            items: {
-                $ref: '#/definitions/Post'
-            }
-        },
-        __relations__: {
-            type: 'object',
-            properties: { 
-                parent: {
-                    $ref: '#/definitions/Person'
-                }
-            }
-        },
-        best_friend: {
-            $ref: '#/definitions/Friend'
-        },
-        best_friend1: {
-            $ref: '#/definitions/Person',
-            $props: {
-                type: 'object',
-                properties: {
-                    since: 'integer'
-                }
-            }
-        },
-        friends: {
-            type: 'array',
-            items: {
-                $ref: '#/definitions/Friend'
-            }
-        }, */
-        /* best_friend1: {
-            $ref: '#/definitions/Person',
-            $props: {
-                type: 'object',
-                properties: {
-                    since: 'integer'
-                }
-            }
-        }, */
-        
-        /* wife: {
-            type: 'object',
-            required: [
-                'since', 'till', '$link'
-            ],
-            properties: { 
-                since: {
-                    type: 'integer'
-                },
-                till: {
-                    type: 'integer'
-                },
-                $link: {
-                    $ref: '#/definitions/Person'
-                }
-            }
-        } */
-        /* wives: { 
-            type: 'array',
-            items: {
-                $ref: '#/definitions/wife'
-            }
-        }, */
-        wife: {
-            type: 'object',
-            required: [
-                '$link'
-            ],
-            properties: { 
-                $props: {
-                    type: 'object',
-                    required: [
-                        'since', 'till'
-                    ],
-                    properties: {
-                        since: {
-                            type: 'integer'
-                        },
-                        till: {
-                            type: 'integer'
-                        },
-                    }
-                },
-                $link: {
-                    $ref: '#/definitions/Person'
-                }
-            }
-        },
-        wife1: {
-            $ref: '#/definitions/Person'    
-        },
-        
-        wives: { //WORKING VARIANT
-            type: 'array',
-            items: {
-                type: 'object',
-                required: [
-                    '$link'
-                ],
-                properties: { 
-                    $props: {
-                        type: 'object',
-                        required: [
-                            'since', 'till'
-                        ],
-                        properties: {
-                            since: {
-                                type: 'integer'
-                            },
-                            till: {
-                                type: 'integer'
-                            },
-                        }
-                    },
-                    $link: {
-                        $ref: '#/definitions/Person'
-                    }
-                }
-            }
-        },
-    }
-}
 
-//const { loadSchemas, normalize } = require('json-schema-normalizer');
-const { loadSchemas, normalize } = require('./jsonnormalizer');
+    let res = (async () => {
+        try {
+            const { Database, Post } = require('./models');
+            let database = new Database({ data: raw_data });
+            let normalized_data = database.normalize();
 
-// Pass an array of schemas to define them
-let map = loadSchemas([person_schema, post_schema, comment_schema, database_schema, person2person_schema, wife_link_schema], { id_attribute: '_id'});
+            console.log(JSON.stringify(normalized_data, void 0, 2));
 
-// Then call normalize with schema name & your denormalized data
-try {
-    const normalized_data = normalize('Database', raw_data);
+            return await database.find({ _id: 0 });
+        }
+        catch(err) {
+            console.err(err);
+        }
 
-    console.log(JSON.stringify(normalized_data, void 0, 2));
-}
-catch(err) {
-    console.err(err);
-}
+        return await database.find({ _id: 0 });
+    })();
 
 ///////////////////////////////////////////////////////////////////////////////////////
 
