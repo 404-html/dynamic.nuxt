@@ -16,6 +16,14 @@ class Member extends Base {
         return params;
     }
 
+    async get(params) {
+        let member = new this.models.Member();
+        let { data, normalized } = await member.find(params);
+        //let { data, normalized } = await member.findOne(params);
+
+        return { data, normalized, flags: { auto_merge: 'normalized' }};
+    }
+
     echo(params) {
         return params;
     }

@@ -23,9 +23,15 @@ let execute = async ({ context, cache = true, method = 'get', endpoint = '/', pa
         config.method === 'get' ? config.params = payload : config.data = payload;
 
         try {
+            debugger
             response = await $axios(config);
 
             cache && axios_cache.set(key, response);
+
+            let { data, data: { flags } } = response;
+            //let { flags } = data;
+
+            flags && flags.auto_merge && data[flags.auto_merge] && context.store.commit('SET_ENTITIES', { data: data[flags.auto_merge].entities });
         }
         catch (err) {
             if(redirectOnError) {

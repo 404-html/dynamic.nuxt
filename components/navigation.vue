@@ -19,7 +19,7 @@
             <v-icon v-html="item.icon" />
           </v-list-tile-action>
           <v-list-tile-content>
-            <v-list-tile-title v-text="item.title" />
+            <v-list-tile-title v-text="item.title"/>
           </v-list-tile-content>
         </v-list-tile>
       </v-list>
@@ -106,6 +106,10 @@ export default {
         async call() {
         
             let { title } = await this.$server.member.echo({ title: 'hi, all' })
+            let { normalized } = await this.$server.member.get({ referer: { $link: { _id: 1326 }}, referals: true });
+
+            console.log('entities', this.$store.state.entities);
+
             this.title = title;
         },
         async call1() {

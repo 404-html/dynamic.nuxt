@@ -1,7 +1,9 @@
+
 class Base {
     constructor(token) {
         this._token = token;
         this.fs = require('fs-extra');
+        this.models = require('../models');
     }
 
     get() {

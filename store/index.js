@@ -14,8 +14,8 @@ export const mutations = {
         state.reload_key = !state.reload_key; */
     },
     
-    SET_ENTITIES(state, { data, query }) {
-        //debugger
+    SET_ENTITIES(state, { data, replace }) {
+        debugger
         let entities = data;
 
         if(entities) {
@@ -23,7 +23,7 @@ export const mutations = {
                 entity !== 'database' && (state.entities[entity] = {});
             }); */
             //debugger;
-            if(query.replace) {
+            if(replace) {
                 Object.keys(entities).forEach(entity => {
                     entity !== 'database' && (state.entities[entity] = {});
                 });
@@ -35,15 +35,18 @@ export const mutations = {
                     arrayMerge: function (destination, source, options) {
                         //return destination.length ? destination : source;
                         //debugger;
+
+                        return source;
+
                         //ALL ARRAYS MUST BE SIMPLE IDs HOLDER AFTER NORMALIZE
-                        if(query.method.toUpperCase() === 'DELETE') {
+                        /* if(query.method.toUpperCase() === 'DELETE') {
                             if(destination.length) {
                                 return destination.filter(id => source.indexOf(id) === -1);
                             }
                             else {
                                 return source;
                             }
-                        }
+                        } */
     
                         let a = new Set(destination);
                         let b = new Set(source);

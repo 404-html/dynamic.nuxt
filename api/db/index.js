@@ -32,6 +32,20 @@ class DatabaseDriver {
 const neo4j = require('neo4j-driver').v1;
 const driver = neo4j.driver(process.env.NEO_URL, neo4j.auth.basic("neo4j", "123"));
 
+const neo4jIntsToStrings = (json) => {
+    const pluckAndModify = (isMatch, transformValue) =>
+        Object.entries(json || {})
+            .filter(isMatch)
+            .reduce((acc, [key, value]) => ({ ...acc, [key]: transformValue(value) }), 
+            {});
+
+    return Object.assign(
+        json,
+        pluckAndModify(([, value]) => typeof value === 'object', neo4jIntsToStrings),
+        pluckAndModify(([, value]) => neo4j.isInt(value), value => value.toString()),
+    );
+};
+
 class NeoDriver extends DatabaseDriver {
     constructor(params) {
         super(params);
@@ -45,7 +59,11 @@ class NeoDriver extends DatabaseDriver {
                 .run(cql, params)
                 .then(function (result) {
                     result.records = result.records.map(function (record) {
-                        return record.get('n');
+                        let rec = record.get('node');
+                        //rec._id = rec._id.toNumber();
+                        rec = neo4jIntsToStrings(rec);
+
+                        return rec;
                     });
                     
                     resolve(result.records);
