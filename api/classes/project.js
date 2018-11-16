@@ -7,7 +7,7 @@ class Member extends Base {
     }
 
     error(params) {
-        let err = new Error('fuck');
+        let err = new Error('butterfly');
         
         err.code = 400;
 
